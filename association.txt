@@ -1,0 +1,66 @@
+# Install the required libraries
+!pip install pandas mlxtend
+
+import pandas as pd
+
+# Load the dataset
+df = pd.read_csv('/content/Market_Basket_Optimisation.csv', header=None)
+
+# Display the first few rows of the dataset to understand its structure
+df.head()
+
+# Preprocessing - Generating list of transactions
+transactions = []
+for i in range(len(df)):
+    # For each row, create a list of values that are not NaN
+    transaction = [str(value) for value in df.iloc[i] if pd.notna(value)]
+    # Add this list to the transactions list
+    transactions.append(transaction)
+
+# Convert transactions into one-hot encoding using TransactionEncoder
+from mlxtend.preprocessing import TransactionEncoder
+
+te = TransactionEncoder()
+te_ary = te.fit(transactions).transform(transactions)
+df_trans = pd.DataFrame(te_ary, columns=te.columns_)
+
+# Display the one-hot encoded transaction data
+df_trans.head()
+
+from mlxtend.frequent_patterns import apriori
+
+# Apply Apriori with a minimum support threshold (e.g., 0.003)
+frequent_itemsets = apriori(df_trans, min_support=0.003, use_colnames=True)
+
+# Display frequent itemsets
+frequent_itemsets.head()
+
+from mlxtend.frequent_patterns import association_rules
+
+# Generate association rules with a minimum confidence threshold (e.g., 0.2)
+rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.2)
+
+# Display the generated rules
+rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']].head()
+
+import matplotlib.pyplot as plt
+
+# Plot the support vs confidence
+plt.scatter(rules['support'], rules['confidence'], alpha=0.5, marker="o")
+plt.xlabel('Support')
+plt.ylabel('Confidence')
+plt.title('Support vs Confidence')
+plt.show()
+
+# Generate association rules with a higher confidence threshold (e.g., 0.5)
+rules_high_conf = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.5)
+
+# Display the rules with a higher confidence value
+rules_high_conf[['antecedents', 'consequents', 'support', 'confidence', 'lift']].head()
+
+# Plot the support vs confidence
+plt.scatter(rules_high_conf['support'], rules_high_conf['confidence'], alpha=0.5, marker="o")
+plt.xlabel('Support')
+plt.ylabel('Confidence')
+plt.title('Support vs Confidence')
+plt.show()
